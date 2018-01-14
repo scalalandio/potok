@@ -8,7 +8,7 @@ import shapeless.{:+:, CNil, Coproduct, Generic, Inl, Inr, Lazy, Nat}
 trait MigrationTassel[Event, U] {
 
   def latestVersion(event: U): Int
-  def toLatest(value: U): Event
+  def toLatest(event: U): Event
 }
 
 object MigrationTassel extends LowPriorityMigrationTassel0 {
