@@ -37,8 +37,6 @@ trait TodoFixtures {
       case class TodoUpdateTags(id: Int, tags: Set[String]) extends TodoEvent
     }
 
-
-
     implicit val todoCreatedMigrationChain =
       MigrationChain
         .from[v1.TodoCreated]
@@ -49,6 +47,8 @@ trait TodoFixtures {
       MigrationChain
         .from[v1.TodoDeleted]
         .to[v2.TodoDeleted](_.toV2)
+
+    implicit def todoEventMigrationTassel[U](implicit mt: MigrationTassel[TodoEvent, U]) = mt
   }
 
 

@@ -5,7 +5,8 @@ import shapeless.ops.nat.ToInt
 import shapeless.{:+:, ::, CNil, Coproduct, HList, HNil, Inl, Inr, Nat, Succ, _0}
 
 
-trait MigrationChain[LatestType, PreviousTypes <: Coproduct] { self =>
+trait MigrationChain[LatestType] { self =>
+  type PreviousTypes <: Coproduct
 
   def latestVersion[N <: Nat](implicit length: Length.Aux[PreviousTypes, N],
                               toInt: ToInt[N]): Int =
@@ -16,16 +17,31 @@ trait MigrationChain[LatestType, PreviousTypes <: Coproduct] { self =>
 
   def toLatest(injected: LatestType :+: PreviousTypes): LatestType
 
-  def to[T](migrate: LatestType => T): MigrationChain[T, LatestType :+: PreviousTypes] = {
-    case Inl(latest) => latest
-    case Inr(previous) => migrate(self.toLatest(previous))
+  def to[T](migrate: LatestType => T): MigrationChain.Aux[T, LatestType :+: PreviousTypes] =
+    new MigrationChain[T] {
+      type PreviousTypes = LatestType :+: self.PreviousTypes
+      def toLatest(injected: T :+: PreviousTypes): T = injected match {
+        case Inl(latest) => latest
+        case Inr(previous) => migrate(self.toLatest(previous))
+      }
+    }
+}
+
+object MigrationChain extends LowPriorityMigrationChain {
+
+  type Aux[LatestType, PrevTypes <: Coproduct] =
+    MigrationChain[LatestType] { type PreviousTypes = PrevTypes }
+
+  def from[LatestType]: MigrationChain.Aux[LatestType, CNil] = new MigrationChain[LatestType] {
+    type PreviousTypes = CNil
+    def toLatest(injected: LatestType :+: PreviousTypes): LatestType = injected match {
+      case Inl(latest) => latest
+      case Inr(_) => ???
+    }
   }
 }
 
-object MigrationChain {
+trait LowPriorityMigrationChain {
 
-  def from[LatestType]: MigrationChain[LatestType, CNil] = {
-    case Inl(latest) => latest
-    case Inr(_) => ???
-  }
+  implicit def any[T]: MigrationChain.Aux[T, CNil] = MigrationChain.from[T]
 }
