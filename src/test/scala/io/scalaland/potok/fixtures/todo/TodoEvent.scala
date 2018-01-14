@@ -23,7 +23,6 @@ object TodoEvent {
     case class TodoDeleted(id: Int) {
       def toV2 = v2.TodoDeleted(id, permanent = true)
     }
-
   }
 
   object v2 {
@@ -33,7 +32,6 @@ object TodoEvent {
     }
 
     case class TodoDeleted(id: Int, permanent: Boolean) extends TodoEvent
-
   }
 
   object v3 {
@@ -41,7 +39,6 @@ object TodoEvent {
     case class TodoCreated(id: Int, title: String, description: String, tags: Set[String]) extends TodoEvent
 
     case class TodoUpdateTags(id: Int, tags: Set[String]) extends TodoEvent
-
   }
 
   implicit val todoCreatedMigrationChain =
@@ -54,6 +51,4 @@ object TodoEvent {
     MigrationChain
       .from[v1.TodoDeleted]
       .to[v2.TodoDeleted](_.toV2)
-
-  implicit def todoEventMigrationTassel[U](implicit mt: MigrationTassel[TodoEvent, U]) = mt
 }

@@ -11,7 +11,7 @@ class MigrationTasselSpec
     "event is already in topmost, evolved version" should {
 
       val v3TodoCreated = TodoEvent.v3.TodoCreated(1, "", "", Set())
-      val mt = TodoEvent.todoEventMigrationTassel[TodoEvent.v3.TodoCreated]
+      val mt = MigrationTassel[TodoEvent, TodoEvent.v3.TodoCreated]
 
       "provide latest event version" in {
         mt.latestVersion(v3TodoCreated) mustBe 3
@@ -25,7 +25,7 @@ class MigrationTasselSpec
     "event is in older version" should {
 
       val v1TodoDeleted = TodoEvent.v1.TodoDeleted(1)
-      val mt = TodoEvent.todoEventMigrationTassel[TodoEvent.v1.TodoDeleted]
+      val mt = MigrationTassel[TodoEvent, TodoEvent.v1.TodoDeleted]
 
       "provide latest event version" in {
         mt.latestVersion(v1TodoDeleted) mustBe 2
@@ -39,8 +39,7 @@ class MigrationTasselSpec
     "event is in topmost v1" should {
 
       val v1TodoMarkedDone = TodoEvent.v1.TodoMarkedDone(1)
-      val mt = TodoEvent.todoEventMigrationTassel[TodoEvent.v1.TodoMarkedDone]
-
+      val mt = MigrationTassel[TodoEvent, TodoEvent.v1.TodoMarkedDone]
 
       "provide latest event version" in {
         mt.latestVersion(v1TodoMarkedDone) mustBe 1

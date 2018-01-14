@@ -13,6 +13,8 @@ trait MigrationTassel[Event, U] {
 
 object MigrationTassel extends LowPriorityMigrationTassel0 {
 
+  def apply[Event, U](implicit mt: MigrationTassel[Event, U]): MigrationTassel[Event, U] = mt
+
   implicit def derive[Event, U, Gen <: Coproduct](implicit gen: Generic.Aux[Event, Gen],
                                                   mt: Lazy[MigrationTassel[Gen, U]]): MigrationTassel[Event, U] =
     new MigrationTassel[Event, U] {
