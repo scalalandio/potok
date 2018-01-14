@@ -1,14 +1,8 @@
 package io.scalaland.potok.fixtures.todo
 
-import java.time.ZonedDateTime
+import io.scalaland.potok.{MigrationChain, MigrationTassel}
 
-import io.scalaland.potok.{Entity, MigrationChain, MigrationTassel}
-
-trait AppEvent
-
-sealed trait UserEvent extends AppEvent // inny BC
-
-sealed trait TodoEvent extends AppEvent
+sealed trait TodoEvent
 
 object TodoEvent {
 
@@ -63,13 +57,3 @@ object TodoEvent {
 
   implicit def todoEventMigrationTassel[U](implicit mt: MigrationTassel[TodoEvent, U]) = mt
 }
-
-
-// entity
-case class Todo(id: Entity.Id[Int],
-                title: String,
-                description: String,
-                isDone: Boolean,
-                tags: Set[String],
-                lastModifiedAt: ZonedDateTime) extends Entity[Int]
-

@@ -6,7 +6,7 @@ import org.scalatest.{MustMatchers, WordSpec}
 class MigrationChainSpec
   extends WordSpec with MustMatchers {
 
-  "MigrationSpec" should {
+  "MigrationChainSpec" should {
 
     "return latest version number" in {
 

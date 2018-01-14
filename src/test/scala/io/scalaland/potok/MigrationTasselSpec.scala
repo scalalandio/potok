@@ -8,8 +8,7 @@ class MigrationTasselSpec
 
   "MigrationTasselSpec" when {
 
-
-    "version is evolved" should {
+    "version is topmost" should {
 
       def v3TodoCreated = TodoEvent.v3.TodoCreated(1, "", "", Set())
 
@@ -20,5 +19,27 @@ class MigrationTasselSpec
 
       }
     }
+
+    "version is older" should {
+
+      def v1TodoDeleted = TodoEvent.v1.TodoDeleted(1)
+
+      "provide latest event version" in {
+        TodoEvent.todoEventMigrationTassel[TodoEvent.v1.TodoDeleted]
+          .latestVersion(v1TodoDeleted) mustBe 2
+       }
+    }
+
+    "version is not touched" should {
+
+      def v1TodoMarkedDone = TodoEvent.v1.TodoMarkedDone(1)
+
+      "provide latest event version" in {
+        TodoEvent.todoEventMigrationTassel[TodoEvent.v1.TodoMarkedDone]
+          .latestVersion(v1TodoMarkedDone) mustBe 1
+      }
+    }
+
+
   }
 }
