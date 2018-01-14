@@ -11,11 +11,10 @@ trait MigrationTassel[Event, U] {
   def toLatest(value: U): Event
 }
 
-object MigrationTassel {
+object MigrationTassel extends LowPriorityMigrationTassel0 {
 
-
-  implicit def gen[Event, U, Gen <: Coproduct](implicit gen: Generic.Aux[Event, Gen],
-                                               mt: Lazy[MigrationTassel[Gen, U]]): MigrationTassel[Event, U] =
+  implicit def derive[Event, U, Gen <: Coproduct](implicit gen: Generic.Aux[Event, Gen],
+                                                  mt: Lazy[MigrationTassel[Gen, U]]): MigrationTassel[Event, U] =
     new MigrationTassel[Event, U] {
       def latestVersion(event: U): Int =
         mt.value.latestVersion(event)
@@ -28,7 +27,7 @@ object MigrationTassel {
     def toLatest(value: U): CNil = ???
   }
 
-  implicit def cconsCase[T, Ts <: Coproduct, U, PTs <: Coproduct, N <: Nat]
+  implicit def mcCase[T, Ts <: Coproduct, U, PTs <: Coproduct, N <: Nat]
     (implicit mc: Lazy[MigrationChain.Aux[T, PTs]],
      injU: Inject[T :+: PTs, U],
      injT: Inject[T :+: Ts, T],
@@ -41,9 +40,23 @@ object MigrationTassel {
       def toLatest(value: U): T :+: Ts =
         injT(mc.value.toLatest(value))
     }
+}
 
+trait LowPriorityMigrationTassel0 extends LowPriorityMigrationTassel1 {
+
+  implicit def noMCCase[T, Ts <: Coproduct, U, PTs <: Coproduct, N <: Nat]
+  (implicit ev: U =:= T,
+   injT: Inject[T :+: Ts, T]): MigrationTassel[T :+: Ts, U] =
+    new MigrationTassel[T :+: Ts, U] {
+      def latestVersion(event: U): Int = 1
+
+      def toLatest(value: U): T :+: Ts = injT(ev(value))
+    }
+}
+
+trait LowPriorityMigrationTassel1 {
   implicit def ctailCase[T, Ts <: Coproduct, U]
-    (implicit mt: Lazy[MigrationTassel[Ts, U]]): MigrationTassel[T :+: Ts, U] =
+  (implicit mt: Lazy[MigrationTassel[Ts, U]]): MigrationTassel[T :+: Ts, U] =
     new MigrationTassel[T :+: Ts, U] {
       def latestVersion(event: U): Int =
         mt.value.latestVersion(event)
@@ -51,5 +64,4 @@ object MigrationTassel {
       def toLatest(value: U): T :+: Ts =
         Inr(mt.value.toLatest(value))
     }
-
 }

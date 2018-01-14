@@ -27,7 +27,7 @@ trait MigrationChain[LatestType] { self =>
     }
 }
 
-object MigrationChain extends LowPriorityMigrationChain {
+object MigrationChain {
 
   type Aux[LatestType, PrevTypes <: Coproduct] =
     MigrationChain[LatestType] { type PreviousTypes = PrevTypes }
@@ -39,9 +39,4 @@ object MigrationChain extends LowPriorityMigrationChain {
       case Inr(_) => ???
     }
   }
-}
-
-trait LowPriorityMigrationChain {
-
-  implicit def any[T]: MigrationChain.Aux[T, CNil] = MigrationChain.from[T]
 }

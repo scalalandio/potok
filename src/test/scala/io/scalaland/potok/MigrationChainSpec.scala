@@ -1,9 +1,10 @@
 package io.scalaland.potok
 
+import io.scalaland.potok.fixtures.todo._
 import org.scalatest.{MustMatchers, WordSpec}
 
 class MigrationChainSpec
-  extends WordSpec with MustMatchers with TodoFixtures {
+  extends WordSpec with MustMatchers {
 
   "MigrationSpec" should {
 
