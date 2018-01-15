@@ -1,16 +1,13 @@
 package io.scalaland.potok
 
-import shapeless.ops.coproduct.{Inject, Length}
-import shapeless.ops.nat.ToInt
-import shapeless.{:+:, ::, CNil, Coproduct, HList, HNil, Inl, Inr, Nat, Succ, _0}
+import shapeless.ops.coproduct.Inject
+import shapeless.{:+:, CNil, Coproduct, Inl, Inr}
 
 
 trait MigrationChain[LatestType] { self =>
   type PreviousTypes <: Coproduct
 
-  def latestVersion[N <: Nat](implicit length: Length.Aux[PreviousTypes, N],
-                              toInt: ToInt[N]): Int =
-    1 + toInt()
+  def latestVersion: Int
 
   def toLatest[U](value: U)(implicit inject: Inject[LatestType :+: PreviousTypes, U]): LatestType =
     toLatest(inject(value))
@@ -19,6 +16,7 @@ trait MigrationChain[LatestType] { self =>
 
   def to[T](migrate: LatestType => T): MigrationChain.Aux[T, LatestType :+: PreviousTypes] =
     new MigrationChain[T] {
+      val latestVersion: Int = self.latestVersion + 1
       type PreviousTypes = LatestType :+: self.PreviousTypes
       def toLatest(injected: T :+: PreviousTypes): T = injected match {
         case Inl(latest) => latest
@@ -33,6 +31,7 @@ object MigrationChain {
     MigrationChain[LatestType] { type PreviousTypes = PrevTypes }
 
   def from[LatestType]: MigrationChain.Aux[LatestType, CNil] = new MigrationChain[LatestType] {
+    def latestVersion: Int = 1
     type PreviousTypes = CNil
     def toLatest(injected: LatestType :+: PreviousTypes): LatestType = injected match {
       case Inl(latest) => latest

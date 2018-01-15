@@ -1,6 +1,6 @@
 package io.scalaland.potok.fixtures.todo
 
-import io.scalaland.potok.{MigrationChain, MigrationTassel}
+import io.scalaland.potok.MigrationChain
 
 sealed trait TodoEvent
 

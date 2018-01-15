@@ -14,7 +14,7 @@ class MigrationTasselSpec
       val mt = MigrationTassel[TodoEvent, TodoEvent.v3.TodoCreated]
 
       "provide latest event version" in {
-        mt.latestVersion(v3TodoCreated) mustBe 3
+        mt.latestVersion mustBe 3
       }
 
       "convert to latest version (identity)" in {
@@ -28,7 +28,7 @@ class MigrationTasselSpec
       val mt = MigrationTassel[TodoEvent, TodoEvent.v1.TodoDeleted]
 
       "provide latest event version" in {
-        mt.latestVersion(v1TodoDeleted) mustBe 2
+        mt.latestVersion mustBe 2
       }
 
       "convert to latest version applying migration" in {
@@ -42,7 +42,7 @@ class MigrationTasselSpec
       val mt = MigrationTassel[TodoEvent, TodoEvent.v1.TodoMarkedDone]
 
       "provide latest event version" in {
-        mt.latestVersion(v1TodoMarkedDone) mustBe 1
+        mt.latestVersion mustBe 1
       }
 
       "convert to latest version (identity)" in {
