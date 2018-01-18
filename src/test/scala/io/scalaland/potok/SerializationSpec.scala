@@ -98,7 +98,7 @@ class SerializationSpec
         val v2Serializer = implicitly[Serializer[TodoEvent.v2.TodoCreated]]
 
         val v2EventEnvelope = RawEventEnvelope(
-          header = EventHeader(v2Serializer.eventName), // v1
+          header = EventHeader(v2Serializer.eventName, version = 2), // v2
           payload = v2Serializer.serialize(v2TodoCreated)
         )
 
