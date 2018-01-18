@@ -49,5 +49,27 @@ class SerializationSpec
         }
       }
     }
+
+    "given non-evolved event" should {
+
+      "serialize and deserialize" in {
+
+        val v1TodoTitleUpdated = TodoEvent.v1.TodoTitleUpdated(1, "test")
+
+        val rawEventEnvelope = st.serialize(v1TodoTitleUpdated)
+
+        inside(rawEventEnvelope.header) { case header =>
+          header.`type` mustBe "io.scalaland.potok.fixtures.todo.TodoEvent$v1$TodoTitleUpdated"
+          header.version mustBe 1
+        }
+
+        rawEventEnvelope.payload mustBe
+          """{"id":1,"title":"test"}""".getBytes("UTF-8")
+
+        st.deserialize(rawEventEnvelope) mustBe Some {
+          EventEnvelope(rawEventEnvelope.header, v1TodoTitleUpdated)
+        }
+      }
+    }
   }
 }
