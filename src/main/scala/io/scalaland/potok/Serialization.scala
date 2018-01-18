@@ -28,7 +28,7 @@ trait SerializationTassel[Event] {
   def deserialize(eventEnvelope: RawEventEnvelope): Option[EventEnvelope[Event]]
 }
 
-object SerializationTassel {
+object SerializationTassel extends LowPrioritySerializationTassel {
 
   implicit def gen[Event, Gen <: Coproduct](implicit gen: Generic.Aux[Event, Gen],
                                             st: SerializationTassel[Gen]): SerializationTassel[Event] =
@@ -47,7 +47,7 @@ object SerializationTassel {
       None
   }
 
-  implicit def cconsCase[H, T <: Coproduct](implicit s: Serializer[H],
+  implicit def hasMCCase[H, T <: Coproduct](implicit s: Serializer[H],
                                             mc: MigrationChain[H],
                                             stTail: SerializationTassel[T]): SerializationTassel[H :+: T] =
     new SerializationTassel[H :+: T] {
@@ -81,6 +81,35 @@ object SerializationTassel {
           // TODO: encode H as Inl
           // TODO: possibly separate type class for H needs to be written (SerializationChain?)
           None
+        } else {
+          stTail.deserialize(eventEnvelope).map(ee => ee.copy(payload = Inr(ee.payload)))
+        }
+      }
+    }
+}
+
+trait LowPrioritySerializationTassel {
+  implicit def hasNoMCCase[H, T <: Coproduct](implicit s: Serializer[H],
+                                              stTail: SerializationTassel[T]): SerializationTassel[H :+: T] =
+    new SerializationTassel[H :+: T] {
+      def serialize(event: H :+: T): RawEventEnvelope = event match {
+        case Inl(head) =>
+          RawEventEnvelope(
+            header = EventHeader(`type` = s.eventName), // version = 1
+            payload = s.serialize(head)
+          )
+        case Inr(tail) =>
+          stTail.serialize(tail)
+      }
+
+      def deserialize(eventEnvelope: RawEventEnvelope): Option[EventEnvelope[H :+: T]] = {
+        if(eventEnvelope.header.`type` == s.eventName) {
+          s.deserialize(eventEnvelope.payload).map { decodedPayload =>
+            EventEnvelope(
+              header = eventEnvelope.header,
+              payload = Inl(decodedPayload)
+            )
+          }
         } else {
           stTail.deserialize(eventEnvelope).map(ee => ee.copy(payload = Inr(ee.payload)))
         }
