@@ -28,6 +28,28 @@ class SerializationSpec
 
     val st = implicitly[SerializationTassel[TodoEvent]]
 
+    "given non-evolved event" should {
+
+      "serialize and deserialize" in {
+
+        val v1TodoTitleUpdated = TodoEvent.v1.TodoTitleUpdated(1, "test")
+
+        val rawEventEnvelope = st.serialize(v1TodoTitleUpdated)
+
+        inside(rawEventEnvelope.header) { case header =>
+          header.`type` mustBe "io.scalaland.potok.fixtures.todo.TodoEvent$v1$TodoTitleUpdated"
+          header.version mustBe 1
+        }
+
+        rawEventEnvelope.payload mustBe
+          """{"id":1,"title":"test"}""".getBytes("UTF-8")
+
+        st.deserialize(rawEventEnvelope) mustBe Some {
+          EventEnvelope(rawEventEnvelope.header, v1TodoTitleUpdated)
+        }
+      }
+    }
+
     "given last version of evolved event" should {
 
       "serialize and deserialize" in {
@@ -50,24 +72,38 @@ class SerializationSpec
       }
     }
 
-    "given non-evolved event" should {
 
-      "serialize and deserialize" in {
+    "given non-last version of evolved event" should {
 
-        val v1TodoTitleUpdated = TodoEvent.v1.TodoTitleUpdated(1, "test")
+      "deserialize and apply evolution from first version" in {
 
-        val rawEventEnvelope = st.serialize(v1TodoTitleUpdated)
+        val v1TodoCreated = TodoEvent.v1.TodoCreated(1, "")
 
-        inside(rawEventEnvelope.header) { case header =>
-          header.`type` mustBe "io.scalaland.potok.fixtures.todo.TodoEvent$v1$TodoTitleUpdated"
-          header.version mustBe 1
+        val v1Serializer = implicitly[Serializer[TodoEvent.v1.TodoCreated]]
+
+        val v1EventEnvelope = RawEventEnvelope(
+          header = EventHeader(v1Serializer.eventName), // v1
+          payload = v1Serializer.serialize(v1TodoCreated)
+        )
+
+        st.deserialize(v1EventEnvelope) mustBe Some {
+          EventEnvelope(v1EventEnvelope.header, v1TodoCreated.toV2.toV3)
         }
+      }
 
-        rawEventEnvelope.payload mustBe
-          """{"id":1,"title":"test"}""".getBytes("UTF-8")
+      "deserialize and apply evolution from middle version" in {
 
-        st.deserialize(rawEventEnvelope) mustBe Some {
-          EventEnvelope(rawEventEnvelope.header, v1TodoTitleUpdated)
+        val v2TodoCreated = TodoEvent.v2.TodoCreated(1, "", "")
+
+        val v2Serializer = implicitly[Serializer[TodoEvent.v2.TodoCreated]]
+
+        val v2EventEnvelope = RawEventEnvelope(
+          header = EventHeader(v2Serializer.eventName), // v1
+          payload = v2Serializer.serialize(v2TodoCreated)
+        )
+
+        st.deserialize(v2EventEnvelope) mustBe Some {
+          EventEnvelope(v2EventEnvelope.header, v2TodoCreated.toV3)
         }
       }
     }
