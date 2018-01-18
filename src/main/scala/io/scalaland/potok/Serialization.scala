@@ -55,7 +55,7 @@ object SerializationTassel extends LowPrioritySerializationTassel {
   }
 
   implicit def hasMCCase[H, T <: Coproduct, PrevTypes <: Coproduct](implicit  mc: MigrationChain.Aux[H, PrevTypes],
-                                                                    dc: DeserializationChain[H, PrevTypes],
+                                                                    dc: DeserializationChain[H, PrevTypes, PrevTypes],
                                                                     s: Serializer[H],
                                                                     stTail: SerializationTassel[T]): SerializationTassel[H :+: T] =
     new SerializationTassel[H :+: T] {
@@ -96,6 +96,7 @@ object SerializationTassel extends LowPrioritySerializationTassel {
 }
 
 trait LowPrioritySerializationTassel {
+
   implicit def hasNoMCCase[H, T <: Coproduct](implicit s: Serializer[H],
                                               stTail: SerializationTassel[T]): SerializationTassel[H :+: T] =
     new SerializationTassel[H :+: T] {
@@ -124,22 +125,22 @@ trait LowPrioritySerializationTassel {
     }
 }
 
-trait DeserializationChain[Target, PrevTypes <: Coproduct] {
+trait DeserializationChain[Target, PrevTypes <: Coproduct, PrevTypes2 <: Coproduct] {
   def tryDeserialize(rawEventEnvelope: RawEventEnvelope): Option[Target]
 }
 
 object DeserializationChain {
 
-  implicit def nilCase[Target](implicit mc: MigrationChain.Aux[Target, CNil]): DeserializationChain[Target, CNil] =
-    new DeserializationChain[Target, CNil] {
+  implicit def nilCase[Target, PrevTypes <: Coproduct]: DeserializationChain[Target, PrevTypes, CNil] =
+    new DeserializationChain[Target, PrevTypes, CNil] {
       def tryDeserialize(rawEventEnvelope: RawEventEnvelope): Option[Target] = None
     }
 
-  implicit def prevCons[Target, PrevType, PrevTail <: Coproduct](implicit mc: MigrationChain.Aux[Target, PrevType :+: PrevTail],
-                                                                 serializer: Serializer[PrevType],
-                                                                 inj: Inject[PrevType :+: PrevTail, PrevType],
-                                                                 dc: DeserializationChain[Target, PrevTail]): DeserializationChain[Target, PrevType :+: PrevTail] =
-    new DeserializationChain[Target, PrevType :+: PrevTail] {
+  implicit def cconsCase[Target, PrevTypes <: Coproduct, PrevType, PrevTail <: Coproduct](implicit mc: MigrationChain.Aux[Target, PrevTypes],
+                                                                                          serializer: Serializer[PrevType],
+                                                                                          inj: Inject[PrevTypes, PrevType],
+                                                                                          dc: DeserializationChain[Target, PrevTypes, PrevTail]): DeserializationChain[Target, PrevTypes, PrevType :+: PrevTail] =
+    new DeserializationChain[Target, PrevTypes, PrevType :+: PrevTail] {
       def tryDeserialize(rawEventEnvelope: RawEventEnvelope): Option[Target] =
         if(rawEventEnvelope.header.`type` == serializer.eventName) {
           serializer.deserialize(rawEventEnvelope.payload)
