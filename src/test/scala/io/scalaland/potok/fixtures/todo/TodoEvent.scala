@@ -18,8 +18,6 @@ object TodoEvent {
 
     case class TodoMarkedUndone(id: Int) extends TodoEvent
 
-    case class TodoDescriptionUpdated(id: Int, description: String) extends TodoEvent
-
     case class TodoDeleted(id: Int) {
       def toV2 = v2.TodoDeleted(id, permanent = true)
     }
@@ -30,6 +28,8 @@ object TodoEvent {
     case class TodoCreated(id: Int, title: String, description: String) {
       def toV3 = v3.TodoCreated(id, title, description, Set())
     }
+
+    case class TodoDescriptionUpdated(id: Int, description: String) extends TodoEvent
 
     case class TodoDeleted(id: Int, permanent: Boolean) extends TodoEvent
   }
